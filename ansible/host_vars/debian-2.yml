@@ -1,0 +1,4 @@
+shared_buffers: "256MB"
+
+letsencrypt_email: "second@gmail.com"
+letsencrypt_domain: "domain2.com"

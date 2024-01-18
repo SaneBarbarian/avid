@@ -1,0 +1,27 @@
+---
+  - name: Generate SSH key pair
+    command: ssh-keygen -t rsa -b 2048 -f "{{ ssh_keys_directory }}/id_rsa" -N ""
+    when: ssh_keys_directory is defined
+
+  - name: Ensure authorized_keys directory exists
+    file:
+      path: /etc/ssh/authorized_keys
+      state: directory
+
+  - name: Copy SSH public keys to authorized_keys directory
+    copy:
+      src: "{{ item.path }}"
+      dest: "/etc/ssh/authorized_keys/{{ item.path | basename | splitext | first }}" # split filename and ext and use just name
+      mode: '0600'
+    loop: "{{ query('find', ssh_keys_directory + '*.pub') }}"  # query function to execute find module
+    when: ssh_keys_directory is defined
+
+  - name: Enable SSH access only with public key authentication
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      line: "{{ item }}"
+    with_items:
+      - "PasswordAuthentication no"
+      - "ChallengeResponseAuthentication no"
+      - "PubkeyAuthentication yes"
+    notify: restart sshd

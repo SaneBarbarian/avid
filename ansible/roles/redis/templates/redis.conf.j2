@@ -1,0 +1,20 @@
+# redis custom file
+
+# Set the bind address to localhost for security
+bind 127.0.0.1
+
+# Specify the port for Redis (adjust as needed)
+port 6379
+
+# Enable protected mode for additional security
+protected-mode yes
+
+# Set the path to the Redis data directory
+dir /var/lib/redis
+
+# Set the Redis database file name
+dbfilename dump.rdb
+
+# Enable AOF (Append Only File) for persistence
+appendonly yes
+appendfilename "appendonly.aof"

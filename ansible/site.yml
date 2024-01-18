@@ -1,0 +1,40 @@
+---   # master playbook
+
+# before launching our playbook, we build image locally on ansible control machine
+
+- name: Build Docker image
+  hosts: localhost
+  gather_facts: false  # Skip gathering facts since it's not needed locally
+  become: true
+  tasks:
+    - name: Build Docker image
+      docker_image:
+        build:
+          path: "{{ image_path }}"
+        name: "py_server:{{ app_image_tag }}"
+      args:
+        creates: "/usr/bin/docker"
+        register: build_result
+
+# we could define pushing to registry in Github actions, but I decided to make it here
+
+- name: Push to registry
+  hosts: localhost
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Push Docker image to registry
+      command: "docker push our-registry/py_server:{{ app_image_tag }}"
+      when: build_result is succeeded  # Only run if the build task succeeded
+
+- name: Deploy Web Application
+  hosts: web-servers   # or all
+  become: true
+
+  roles:
+    - redis
+    - postgresql
+    - ssh_secure
+    - docker
+    - appstart
+    - nginx  # upstream won't start if app won't be running, so it must be last one

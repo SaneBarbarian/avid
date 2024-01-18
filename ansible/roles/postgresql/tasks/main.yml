@@ -1,0 +1,34 @@
+- name: Install PostgreSQL and dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ postgresql_packages }}"
+
+- name: Start and enable PostgreSQL service
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Configure custom PostgreSQL settings
+  template:
+    src: postgresql.conf.j2
+    dest: /etc/postgresql/13/main/postgresql.conf
+  notify: restart postgresql
+
+- name: Create a PostgreSQL database
+  become_user: postgres
+  command: createdb testdb
+
+# user need to be associated with db
+- name: Create a PostgreSQL user
+  become_user: postgres
+  command: createuser --no-createdb --no-superuser --no-createrole testuser
+
+- name: Set PostgreSQL user password
+  become_user: postgres  #posgres superuser
+  postgresql_user:
+    db: testdb
+    name: testuser
+    password: mypassword  # as for good practice we could use Ansible Vault and store it in {{ vault_postgresql_password }}
+    encrypted: yes

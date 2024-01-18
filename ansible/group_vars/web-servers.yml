@@ -1,0 +1,16 @@
+docker_version: "20.10"
+image_path: "/home/{{ ansible_env.USER }}/cloudops-test/app/"
+app_image_tag: "latest"
+app_port: "8000"
+
+redis_version: "7.2"
+
+postgresql_version: "15"
+
+nginx_version: "1.21.6"
+
+postgresql_packages:
+  - postgresql
+  - postgresql-contrib
+
+ssh_keys_directory: "/home/{{ ansible_env.USER }}/cloudops-test/ansible/ssh_secure/files/"

@@ -1,0 +1,4 @@
+shared_buffers: "128MB"
+
+letsencrypt_email: "third@gmail.com"
+letsencrypt_domain: "domain3.com"

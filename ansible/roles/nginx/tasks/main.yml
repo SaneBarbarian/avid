@@ -1,0 +1,31 @@
+---
+- name: Install Nginx
+  apt:
+    name: "nginx={{ nginx_version }}"
+    state: present
+
+- name: Configure Nginx
+  template:
+    src: "templates/nginx.conf.j2"
+    dest: "/etc/nginx/nginx.conf"
+  notify: Reload Nginx
+
+- name: Install Certbot
+  apt:
+    name: certbot
+    state: present
+
+- name: Generate Let's Encrypt certificate
+  shell: "certbot certonly --non-interactive --agree-tos --email {{ letsencrypt_email }} --webroot -w /var/www/html -d {{ letsencrypt_domain }}"
+
+- name: Configure Nginx with Let's Encrypt certificate
+  template:
+    src: "letsencrypt_params.conf.j2"
+    dest: "/etc/nginx/letsencrypt_params.conf"
+  notify: Reload Nginx
+
+handlers:
+  - name: Reload Nginx
+    ansible.builtin.service:
+      name: nginx
+      state: reloaded

@@ -1,0 +1,63 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - ITulupov
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+  # have to install docker because pipeline won't run on a host machine, and requires base app to run our container
+    - name: Docker Install
+      run: sudo apt-get update && sudo apt-get install -y docker.io
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Ansible dependencies
+      run: pip install ansible && pip install -r ansible-requirements.txt
+
+    - name: Check for Ruby on Rails
+      id: check-rails
+      run: |   # check if there is file with Ruby libraries and packages
+        if [ -f Gemfile ] && grep -q 'rails' Gemfile; then   
+          echo "Rails project detected."
+          echo "##[set-output name=detected;]true"  # depr
+        fi
+
+    - name: Set up Ruby for Rails migration
+      if: steps.check-rails.outputs.detected == 'true'
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.7'
+
+    - name: Rails Database Migration
+      if: steps.check-rails.outputs.detected == 'true'
+      run: |
+        bundle install
+        RAILS_ENV=production bundle exec rake db:migrate
+
+    - name: Check for Django
+      id: check-django
+      run: |   # check if Django is presented in requirement file
+        if [ -f requirements.txt ] && grep -q 'Django' requirements.txt; then
+          echo "Django project detected."
+          echo "##[set-output name=detected;]true"
+        fi
+
+    - name: Django Database Migration
+      if: steps.check-django.outputs.detected == 'true'
+      run: |
+        pip install -r requirements.txt
+        python manage.py migrate
+
+    - name: Run Ansible playbook for deployment
+      run: ansible-playbook -i ansible/inventories/hosts.ini ansible/site.yml
